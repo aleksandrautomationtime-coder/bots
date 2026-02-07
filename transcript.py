@@ -37,9 +37,19 @@ def get_transcript(url_or_id: str, languages: list[str] | None = None) -> str:
 
     lang_list = languages or ["ru", "en"]
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=lang_list)
-        parts = [item["text"] for item in transcript]
+        api = YouTubeTranscriptApi()
+        fetched = api.fetch(video_id, languages=lang_list)
+        parts = [snippet.text for snippet in fetched]
         return " ".join(parts).strip()
+    except AttributeError:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=lang_list)
+            parts = [item["text"] for item in transcript]
+            return " ".join(parts).strip()
+        except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable):
+            raise
+        except Exception as e:
+            return f"[Ошибка: {e}]"
     except TranscriptsDisabled:
         return "[У этого видео отключены субтитры]"
     except NoTranscriptFound:
